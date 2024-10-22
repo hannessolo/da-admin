@@ -9,54 +9,27 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-import {
-  S3Client,
-  GetObjectCommand,
-  HeadObjectCommand,
-} from '@aws-sdk/client-s3';
-
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import getS3Config from '../utils/config.js';
-
-function buildInput({ org, key }) {
-  const Bucket = `${org}-content`;
-  return { Bucket, Key: key };
-}
-
 export default async function getObject(env, { org, key }, head = false) {
-  const config = getS3Config(env);
-  const client = new S3Client(config);
+  // TODO mapping from org and key to the correct worker/author url. Config json file?
+  const result = await fetch('https://cf2html.hanneshertach490.workers.dev/author-p130360-e1463269/projects/demo-page');
 
-  const input = buildInput({ org, key });
+  const text = await result.text();
+
   if (!head) {
+    console.log('returning non-head')
     try {
-      const resp = await client.send(new GetObjectCommand(input));
       return {
-        body: resp.Body,
-        status: resp.$metadata.httpStatusCode,
-        contentType: resp.ContentType,
-        contentLength: resp.ContentLength,
-        metadata: resp.Metadata,
-        etag: resp.ETag,
+        body: text,
+        status: 200,
       };
     } catch (e) {
       return { body: '', status: e.$metadata?.httpStatusCode || 404, contentLength: 0 };
     }
   }
-  const url = await getSignedUrl(client, new HeadObjectCommand(input), { expiresIn: 3600 });
-  const resp = await fetch(url, { method: 'HEAD' });
-  const Metadata = {};
-  resp.headers.forEach((value, key2) => {
-    if (key2.startsWith('x-amz-meta-')) {
-      Metadata[key2.substring('x-amz-meta-'.length)] = value;
-    }
-  });
+  console.log('returning head')
+
   return {
     body: '',
-    status: resp.status,
-    contentType: resp.headers.get('content-type'),
-    contentLength: resp.headers.get('content-length'),
-    metadata: Metadata,
-    etag: resp.headers.get('etag'),
+    status: 200,
   };
 }

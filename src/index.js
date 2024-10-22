@@ -21,11 +21,18 @@ import unkownHandler from './handlers/unkown.js';
 export default {
   async fetch(req, env) {
     if (req.method === 'OPTIONS') return daResp({ status: 204 });
-
+console.log('here')
     const daCtx = await getDaCtx(req, env);
+    console.log('here2')
+
     const { authorized, key } = daCtx;
+    console.log('here3')
+
     if (!authorized) return daResp({ status: 401 });
     if (key?.startsWith('.da-versions')) return daResp({ status: 404 });
+
+    console.log('here4')
+
 
     let respObj;
     switch (req.method) {
